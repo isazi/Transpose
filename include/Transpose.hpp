@@ -91,9 +91,13 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	// Local in-place transpose
 	*(this->code) += "for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + " / 2; i++ ) {\n"
 	"unsigned int localItem = (get_local_id(0) + i) % " + nrThreadsPerBlock_s + ";\n"
-	+ this->dataType + " temp = 0;\n"
-	"if ( (i < "+ nrThreadsPerBlock_s + " - " + toStringValue< unsigned int >(vectorWidth * ((nrThreadsPerBlock / vectorWidth) - 1)) + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n"
-	"temp = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem];\n"
+	+ this->dataType + " temp = 0;\n";
+	if ( nrThreadsPerBlock == vectorWidth ) {
+		*(this->code) += "if ( (i < "+ nrThreadsPerBlock_s + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n";
+	} else {
+		*(this->code) += "if ( (i < "+ nrThreadsPerBlock_s + " - " + toStringValue< unsigned int >(nrThreadsPerBlock / 2) + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n";
+	}
+	*(this->code) += "temp = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem];\n"
 	"tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem] = tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)];\n"
 	"tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = temp;\n"
 	"}\n"
@@ -110,7 +114,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(M, ceil(static_cast < double >(N) / nrThreadsPerBlock));
+	globalSize = cl::NDRange(M, ceil(static_cast< double >(N) / nrThreadsPerBlock));
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
 	this->gb = giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(T));
