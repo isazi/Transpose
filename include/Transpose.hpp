@@ -95,7 +95,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
 	// Store output
 	"for ( unsigned int n = 0; n < " + nrThreadsPerBlock_s + "; n++ ) {\n"
-	"if ( baseN + n < " + nrSamplesPerSecond_s + " ) {\n"
+	"if ( baseN + n < " + N_s + " ) {\n"
 	"output[((baseN + n) * " + paddedM_s + ") + (baseM + get_local_id(0))] = tempStorage[(n * " + nrThreadsPerBlock_s + ") + get_local_id(0)];"
 	"}\n"
 	"}\n"
