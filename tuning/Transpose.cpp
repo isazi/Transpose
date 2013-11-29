@@ -37,8 +37,6 @@ using std::numeric_limits;
 
 #include <ArgumentList.hpp>
 using isa::utils::ArgumentList;
-#include <Observation.hpp>
-using AstroData::Observation;
 #include <InitializeOpenCL.hpp>
 using isa::OpenCL::initializeOpenCL;
 #include <CLData.hpp>
@@ -94,7 +92,7 @@ int main(int argc, char * argv[]) {
 
 	// Allocate memory
 	inputData->allocateHostData(M * pad(N, padding));
-	inputData->blankHostData()
+	inputData->blankHostData();
 	transposedData->allocateHostData(N * pad(M, padding));
 	transposedData->blankHostData();
 
