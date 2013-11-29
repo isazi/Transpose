@@ -48,8 +48,8 @@ using isa::utils::pad;
 #include <Transpose.hpp>
 using isa::OpenCL::Transpose;
 
-typedef float dataType;
-const string typeName("float");
+typedef unsigned int dataType;
+const string typeName("unsigned int");
 const unsigned int padding = 32;
 const bool DEBUG = false;
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 	// Check
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			if ( !same(inputData->getHostDataItem((m * pad(N, padding)) + n), transposeData->getHostDataItem((n * pad(M, padding)) + m)) ) {
+			if ( inputData->getHostDataItem((m * pad(N, padding)) + n) != transposeData->getHostDataItem((n * pad(M, padding) + m)) ) {
 				wrongValues++;
 			}
 		}
