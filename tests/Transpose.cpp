@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
 		Transpose< dataType > clTranspose("clTranspose", typeName);
 		clTranspose.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 		clTranspose.setDimensions(M, N);
+		clTranspose.setPaddingFactor(padding);
 		clTranspose.setNrThreadsPerBlock(nrThreads);
 		clTranspose.generateCode();
 
