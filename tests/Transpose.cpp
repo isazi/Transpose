@@ -50,6 +50,7 @@ using isa::OpenCL::Transpose;
 typedef unsigned int dataType;
 const string typeName("unsigned int");
 const unsigned int padding = 32;
+const unsigned int vectorWidth = 32;
 const bool DEBUG = false;
 
 
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
 
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			inputData->setHostDataItem((m * pad(N, padding)) + n, (m * N) + n));
+			inputData->setHostDataItem((m * pad(N, padding)) + n, (m * N) + n);
 			if ( DEBUG ) {
 				cout << setw(3) << inputData->getHostDataItem((m * pad(N, padding)) + n) << " ";
 			}

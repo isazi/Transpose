@@ -53,6 +53,7 @@ typedef float dataType;
 const string typeName("float");
 const unsigned int maxThreadsPerBlock = 1024;
 const unsigned int padding = 32;
+const unsigned int vectorWidth = 32;
 
 
 int main(int argc, char * argv[]) {
@@ -132,6 +133,7 @@ int main(int argc, char * argv[]) {
 			clTranspose.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 			clTranspose.setDimensions(M, N);
 			clTranspose.setPaddingFactor(padding);
+			clTranspose.setVectorWidth(vectorWidth);
 			clTranspose.setNrThreadsPerBlock(*configuration);
 			clTranspose.generateCode();
 
