@@ -25,6 +25,7 @@ using isa::Exceptions::OpenCLError;
 #include <utils.hpp>
 using isa::utils::toStringValue;
 using isa::utils::giga;
+using isa::utils::pad;
 
 
 #ifndef TRANSPOSE_HPP
@@ -43,39 +44,41 @@ public:
 
 	inline void setNrThreadsPerBlock(unsigned int threads);
 
-	inline void setObservation(Observation< T > * obs);
+	inline void setDimensions(unsigned int M, unsigned int N);
 
 private:
 	unsigned int nrThreadsPerBlock;
 	cl::NDRange globalSize;
 	cl::NDRange localSize;
 
-	Observation< T > * observation;
+	unsigned int M;
+	unsigned int N;
 };
 
 
 // Implementation
-template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
+template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), M(0), N(0) {}
 
 template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
 	string localElements_s = toStringValue< unsigned int >(nrThreadsPerBlock * nrThreadsPerBlock);
 	string nrThreadsPerBlock_s = toStringValue< unsigned int >(nrThreadsPerBlock);
-	string nrSamplesPerPaddedSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerPaddedSecond());
-	string nrSamplesPerSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerSecond());
-	string nrPaddedDMs_s = toStringValue< unsigned int >(observation->getNrPaddedDMs());
+	string paddedM_s = toStringValue< unsigned int >(pad(M));
+	string M_s = toStringValue< unsigned int >(M);
+	string paddedN_s = toStringValue< unsigned int >(pad(N));
+	string N_s = toStringValue< unsigned int >(N);
 
 	delete this->code;
 	this->code = new string();
 	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
-	"const unsigned int baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
-	"const unsigned int baseSample = get_group_id(1) * " + nrThreadsPerBlock_s + ";\n"
+	"const unsigned int baseM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
+	"const unsigned int baseN = get_group_id(1) * " + nrThreadsPerBlock_s + ";\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
 	"\n"
 	// Load input
-	"for ( unsigned int DM = 0; DM < " + nrThreadsPerBlock_s + "; DM++ ) {\n"
-	"if ( baseSample + get_local_id(0) < " + nrSamplesPerSecond_s + " ) {\n"
-	"tempStorage[(DM * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = input[((baseDM + DM) * " + nrSamplesPerPaddedSecond_s + ") + (baseSample + get_local_id(0))];\n"
+	"for ( unsigned int m = 0; m < " + nrThreadsPerBlock_s + "; m++ ) {\n"
+	"if ( baseN + get_local_id(0) < " + N_s + " ) {\n"
+	"tempStorage[(m * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = input[((baseM + m) * " + paddedN_s + ") + (baseN + get_local_id(0))];\n"
 	"}\n"
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
@@ -91,18 +94,18 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
 	// Store output
-	"for ( unsigned int sample = 0; sample < " + nrThreadsPerBlock_s + "; sample++ ) {\n"
-	"if ( baseSample + sample < " + nrSamplesPerSecond_s + " ) {\n"
-	"output[((baseSample + sample) * " + nrPaddedDMs_s + ") + (baseDM + get_local_id(0))] = tempStorage[(sample * " + nrThreadsPerBlock_s + ") + get_local_id(0)];"
+	"for ( unsigned int n = 0; n < " + nrThreadsPerBlock_s + "; n++ ) {\n"
+	"if ( baseN + n < " + nrSamplesPerSecond_s + " ) {\n"
+	"output[((baseN + n) * " + paddedM_s + ") + (baseM + get_local_id(0))] = tempStorage[(n * " + nrThreadsPerBlock_s + ") + get_local_id(0)];"
 	"}\n"
 	"}\n"
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(observation->getNrDMs(), ceil(observation->getNrSamplesPerSecond() / nrThreadsPerBlock));
+	globalSize = cl::NDRange(M, ceil(N / nrThreadsPerBlock));
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
-	this->gb = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrSamplesPerSecond() * 2 * sizeof(T));
+	this->gb = giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(T));
 
 	this->compile();
 }
@@ -118,8 +121,9 @@ template< typename T > inline void Transpose< T >::setNrThreadsPerBlock(unsigned
 	nrThreadsPerBlock = threads;
 }
 
-template< typename T > inline void Transpose< T >::setObservation(Observation< T > * obs) {
-	observation = obs;
+template< typename T > inline void Transpose< T >::setDimensions(unsigned int M, unsigned int N) {
+	this->M = M;
+	this->N = N;
 }
 
 } // OpenCl
