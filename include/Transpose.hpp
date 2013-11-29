@@ -104,7 +104,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(M, ceil(N / nrThreadsPerBlock));
+	globalSize = cl::NDRange(M, ceil(static_cast < double >(N) / nrThreadsPerBlock));
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
 	this->gb = giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(T));
@@ -113,7 +113,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 }
 
 template< typename T > void Transpose< T >::operator()(CLData< T > * input, CLData< T > * output) throw (OpenCLError) {
-	this->setArgument(0, *(input->getDeviceData()));
+	this->setArgume1nt(0, *(input->getDeviceData()));
 	this->setArgument(1, *(output->getDeviceData()));
 
 	this->run(globalSize, localSize);
