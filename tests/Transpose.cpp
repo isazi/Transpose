@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			inputData->setHostDataItem((m * pad(N, padding)) + n, n);
+			inputData->setHostDataItem((m * pad(N, padding)) + n, (m * N) + n));
 			if ( DEBUG ) {
 				cout << setw(3) << inputData->getHostDataItem((m * pad(N, padding)) + n) << " ";
 			}
