@@ -43,7 +43,6 @@ using isa::OpenCL::initializeOpenCL;
 #include <CLData.hpp>
 using isa::OpenCL::CLData;
 #include <utils.hpp>
-using isa::utils::same;
 using isa::utils::pad;
 #include <Transpose.hpp>
 using isa::OpenCL::Transpose;
