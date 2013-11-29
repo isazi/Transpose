@@ -138,7 +138,7 @@ template< typename T > inline void Transpose< T >::setPaddingFactor(unsigned int
 	padding = factor;
 }
 
-template< typename T > inline inline void Transpose< T >::setVectorWidth(unsigned int width) {
+template< typename T > inline void Transpose< T >::setVectorWidth(unsigned int width) {
 	vectorWidth = width;
 }
 
