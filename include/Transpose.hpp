@@ -46,6 +46,7 @@ public:
 
 	inline void setDimensions(unsigned int M, unsigned int N);
 	inline void setPaddingFactor(unsigned int factor);
+	inline void setVectorWidth(unsigned int width);
 
 private:
 	unsigned int nrThreadsPerBlock;
@@ -55,11 +56,12 @@ private:
 	unsigned int M;
 	unsigned int N;
 	unsigned int padding;
+	unsigned int vectorWidth;
 };
 
 
 // Implementation
-template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), M(0), N(0), padding(0) {}
+template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), M(0), N(0), padding(0), vectorWidth(0) {}
 
 template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
@@ -82,21 +84,25 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"if ( baseN + get_local_id(0) < " + N_s + " ) {\n"
 	"tempStorage[(m * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = input[((baseM + m) * " + paddedN_s + ") + (baseN + get_local_id(0))];\n"
 	"}\n"
-	"}\n"
-	"barrier(CLK_LOCAL_MEM_FENCE);\n"
+	"}\n";
+	if ( nrThreadsPerBlock > vectorWidth ) {
+		*(this->code) += "barrier(CLK_LOCAL_MEM_FENCE);\n";
+	}
 	// Local in-place transpose
-	"for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + " / 2; i++ ) {\n"
+	*(this->code) += "for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + " / 2; i++ ) {\n"
 	"unsigned int localItem = (get_local_id(0) + i) % " + nrThreadsPerBlock_s + ";\n"
 	+ this->dataType + " temp = 0;\n"
-	"if ( (i != "+ nrThreadsPerBlock_s + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n"
+	"if ( (i < "+ nrThreadsPerBlock_s + " - " + toStringValue< unsigned int >(vectorWidth * ((nrThreadsPerBlock / vectorWidth) - 1)) + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n"
 	"temp = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem];\n"
 	"tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem] = tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)];\n"
 	"tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = temp;\n"
 	"}\n"
-	"}\n"
-	"barrier(CLK_LOCAL_MEM_FENCE);\n"
+	"}\n";
+	if ( nrThreadsPerBlock > vectorWidth ) {
+		*(this->code) += "barrier(CLK_LOCAL_MEM_FENCE);\n";
+	}
 	// Store output
-	"for ( unsigned int n = 0; n < " + nrThreadsPerBlock_s + "; n++ ) {\n"
+	*(this->code) += "for ( unsigned int n = 0; n < " + nrThreadsPerBlock_s + "; n++ ) {\n"
 	"if ( baseN + n < " + N_s + " ) {\n"
 	"output[((baseN + n) * " + paddedM_s + ") + (baseM + get_local_id(0))] = tempStorage[(n * " + nrThreadsPerBlock_s + ") + get_local_id(0)];"
 	"}\n"
@@ -130,6 +136,10 @@ template< typename T > inline void Transpose< T >::setDimensions(unsigned int M,
 
 template< typename T > inline void Transpose< T >::setPaddingFactor(unsigned int factor) {
 	padding = factor;
+}
+
+template< typename T > inline inline void Transpose< T >::setVectorWidth(unsigned int width) {
+	vectorWidth = width;
 }
 
 } // OpenCl
