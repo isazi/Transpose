@@ -24,7 +24,6 @@
 #include <iomanip>
 #include <limits>
 #include <cmath>
-#include <ctime>
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -34,6 +33,7 @@ using std::exception;
 using std::ofstream;
 using std::fixed;
 using std::setprecision;
+using std::setw;
 using std::numeric_limits;
 
 #include <ArgumentList.hpp>
@@ -51,6 +51,7 @@ using isa::OpenCL::Transpose;
 typedef float dataType;
 const string typeName("float");
 const unsigned int padding = 32;
+const bool DEBUG = false;
 
 
 int main(int argc, char *argv[]) {
@@ -103,11 +104,19 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	srand(time(NULL));
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			inputData->setHostDataItem((m * pad(N, padding)) + n, rand() % 100);
+			inputData->setHostDataItem((m * pad(N, padding)) + n, n);
+			if ( DEBUG ) {
+				cout << setw(3) << inputData->getHostDataItem((m * pad(N, padding)) + n) << " ";
+			}
 		}
+		if ( DEBUG ) {
+			cout << endl;
+		}
+	}
+	if ( DEBUG ) {
+		cout << endl;
 	}
 
 	// Test
@@ -135,6 +144,15 @@ int main(int argc, char *argv[]) {
 				wrongValues++;
 			}
 		}
+	}
+	if ( DEBUG ) {
+		for ( unsigned int n = 0; n < N; n++ ) {
+			for ( unsigned int m = 0; m < M; m++ ) {
+				cout << cout << setw(3) transposeData->getHostDataItem((n * pad(M, padding)) + m) << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
 	}
 
 	cout << endl;
