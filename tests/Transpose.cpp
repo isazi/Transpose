@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 	if ( DEBUG ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
 			for ( unsigned int m = 0; m < M; m++ ) {
-				cout << cout << setw(3) << transposeData->getHostDataItem((n * pad(M, padding)) + m) << " ";
+				cout << setw(3) << transposeData->getHostDataItem((n * pad(M, padding)) + m) << " ";
 			}
 			cout << endl;
 		}
