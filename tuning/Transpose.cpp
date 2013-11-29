@@ -93,9 +93,9 @@ int main(int argc, char * argv[]) {
 	cout << "# M N nrThreadPerBlock GB/s err time err" << endl << endl;
 
 	// Allocate memory
-	inputData->allocateHostData(M * pad(N));
+	inputData->allocateHostData(M * pad(N, padding));
 	inputData->blankHostData()
-	transposedData->allocateHostData(N * pad(M));
+	transposedData->allocateHostData(N * pad(M, padding));
 	transposedData->blankHostData();
 
 	inputData->setCLContext(clContext);

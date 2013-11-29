@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 	initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
 
 	// Allocate memory
-	inputData->allocateHostData(M * pad(N));
-	transposeData->allocateHostData(N * pad(M));
+	inputData->allocateHostData(M * pad(N, padding));
+	transposeData->allocateHostData(N * pad(M, padding));
 
 	inputData->setCLContext(clContext);
 	inputData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 	srand(time(NULL));
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			inputData->setHostDataItem((m * pad(N)) + n, rand() % 100);
+			inputData->setHostDataItem((m * pad(N, padding)) + n, rand() % 100);
 		}
 	}
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 	// Check
 	for ( unsigned int m = 0; m < M; m++ ) {
 		for ( unsigned int n = 0; n < N; n++ ) {
-			if ( !same(inputData->getHostDataItem((m * pad(N)) + n), transposeData->getHostDataItem((n * pad(M)) + m)) ) {
+			if ( !same(inputData->getHostDataItem((m * pad(N, padding)) + n), transposeData->getHostDataItem((n * pad(M, padding)) + m)) ) {
 				wrongValues++;
 			}
 		}
