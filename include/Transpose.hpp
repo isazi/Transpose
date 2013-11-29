@@ -113,7 +113,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 }
 
 template< typename T > void Transpose< T >::operator()(CLData< T > * input, CLData< T > * output) throw (OpenCLError) {
-	this->setArgume1nt(0, *(input->getDeviceData()));
+	this->setArgument(0, *(input->getDeviceData()));
 	this->setArgument(1, *(output->getDeviceData()));
 
 	this->run(globalSize, localSize);
