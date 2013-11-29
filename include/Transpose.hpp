@@ -45,6 +45,7 @@ public:
 	inline void setNrThreadsPerBlock(unsigned int threads);
 
 	inline void setDimensions(unsigned int M, unsigned int N);
+	inline void setPaddingFactor(unsigned int factor);
 
 private:
 	unsigned int nrThreadsPerBlock;
@@ -53,19 +54,20 @@ private:
 
 	unsigned int M;
 	unsigned int N;
+	unsigned int padding;
 };
 
 
 // Implementation
-template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), M(0), N(0) {}
+template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), M(0), N(0), padding(0) {}
 
 template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
 	string localElements_s = toStringValue< unsigned int >(nrThreadsPerBlock * nrThreadsPerBlock);
 	string nrThreadsPerBlock_s = toStringValue< unsigned int >(nrThreadsPerBlock);
-	string paddedM_s = toStringValue< unsigned int >(pad(M));
+	string paddedM_s = toStringValue< unsigned int >(pad(M, padding));
 	string M_s = toStringValue< unsigned int >(M);
-	string paddedN_s = toStringValue< unsigned int >(pad(N));
+	string paddedN_s = toStringValue< unsigned int >(pad(N, padding));
 	string N_s = toStringValue< unsigned int >(N);
 
 	delete this->code;
@@ -124,6 +126,10 @@ template< typename T > inline void Transpose< T >::setNrThreadsPerBlock(unsigned
 template< typename T > inline void Transpose< T >::setDimensions(unsigned int M, unsigned int N) {
 	this->M = M;
 	this->N = N;
+}
+
+template< typename T > inline void Transpose< T >::setPaddingFactor(unsigned int factor) {
+	padding = factor;
 }
 
 } // OpenCl
