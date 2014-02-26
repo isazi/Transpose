@@ -51,9 +51,6 @@ using isa::OpenCL::Transpose;
 
 typedef float dataType;
 const string typeName("float");
-const unsigned int maxThreadsPerBlock = 1024;
-const unsigned int padding = 32;
-const unsigned int vectorWidth = 32;
 
 
 int main(int argc, char * argv[]) {
@@ -61,6 +58,9 @@ int main(int argc, char * argv[]) {
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
+	unsigned int padding = 0;
+	const unsigned int vectorWidth = 32;
+	unsigned int maxThreadsPerBlock = 0;
 	unsigned int M = 0;
 	unsigned int N = 0;
 	CLData< dataType > * inputData = new CLData< dataType >("InputData", true);
@@ -73,9 +73,15 @@ int main(int argc, char * argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
+		padding = args.getSwitchArgument< unsigned int >("-padding");
+		vectorWidth = args.getSwitchArgument< unsigned int >("-vector");
 		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
+		maxThreadsPerBlock = args.getSwitchArgument< unsigned int >("-mnt");
 		M = args.getSwitchArgument< unsigned int >("-M");
 		N = args.getSwitchArgument< unsigned int >("-N");
+	} catch ( EmptyCommandLine err ) {
+		cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -vector ... -lnt ... -mnt ... -M ... -N ..." << endl;
+		return 1;
 	} catch ( exception & err ) {
 		cerr << err.what() << endl;
 		return 1;
@@ -115,7 +121,7 @@ int main(int argc, char * argv[]) {
 
 	// Find the parameters
 	vector< unsigned int > configurations;
-	for ( unsigned int threadsPerBlock = lowerNrThreads; threadsPerBlock <= maxThreadsPerBlock; threadsPerBlock++ ) {
+	for ( unsigned int threadsPerBlock = lowerNrThreads; threadsPerBlock <= maxThreadsPerBlock; threadsPerBlock += vectorWidth ) {
 		if ( M % threadsPerBlock == 0 ) {
 			configurations.push_back(threadsPerBlock);
 		}
