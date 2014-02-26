@@ -59,7 +59,7 @@ int main(int argc, char * argv[]) {
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
 	unsigned int padding = 0;
-	const unsigned int vectorWidth = 32;
+	unsigned int vectorWidth = 32;
 	unsigned int maxThreadsPerBlock = 0;
 	unsigned int M = 0;
 	unsigned int N = 0;
