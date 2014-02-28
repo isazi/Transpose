@@ -128,11 +128,6 @@ int main(int argc, char * argv[]) {
 	}
 
 	for ( vector< unsigned int >::const_iterator configuration = configurations.begin(); configuration != configurations.end(); configuration++ ) {
-		double Acur = 0.0;
-		double Aold = 0.0;
-		double Vcur = 0.0;
-		double Vold = 0.0;
-
 		try {
 			// Generate kernel
 			Transpose< dataType > clTranspose("clTranspose", typeName);
@@ -148,20 +143,9 @@ int main(int argc, char * argv[]) {
 			
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				clTranspose(inputData, transposedData);
-				
-				if ( iteration == 0 ) {
-					Acur = clTranspose.getGB() / clTranspose.getTimer().getLastRunTime();
-				} else {
-					Aold = Acur;
-					Vold = Vcur;
-
-					Acur = Aold + (((clTranspose.getGB() / clTranspose.getTimer().getLastRunTime()) - Aold) / (iteration + 1));
-					Vcur = Vold + (((clTranspose.getGB() / clTranspose.getTimer().getLastRunTime()) - Aold) * ((clTranspose.getGB() / clTranspose.getTimer().getLastRunTime()) - Acur));
-				}
 			}
-			Vcur = sqrt(Vcur / nrIterations);
 
-			cout << M << " " << N << " " << *configuration << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clTranspose.getTimer().getAverageTime() << " " << clTranspose.getTimer().getStdDev() << endl;
+			cout << M << " " << N << " " << *configuration << " " << setprecision(3) << clTranspose.getGBs() << " " << clTranspose.getGBsErr() << " " << setprecision(6) << clTranspose.getTimer().getAverageTime() << " " << clTranspose.getTimer().getStdDev() << endl;
 		} catch ( OpenCLError err ) {
 			cerr << err.what() << endl;
 			continue;
