@@ -140,6 +140,7 @@ int main(int argc, char * argv[]) {
 
 			clTranspose(inputData, transposedData);
 			(clTranspose.getTimer()).reset();
+			clTranspose.resetStats();
 			
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				clTranspose(inputData, transposedData);
