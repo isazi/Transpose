@@ -44,7 +44,7 @@ std::string * getTransposeOpenCL(const unsigned int nrThreads, const unsigned in
   std::string * code = new std::string();
 
   // Begin kernel's template
-	*code = "__kernel void " + this->name + "(__global const " + typeName + " * const restrict input, __global " + typeName + " * const restrict output) {\n"
+	*code = "__kernel void transpose(__global const " + typeName + " * const restrict input, __global " + typeName + " * const restrict output) {\n"
 	"const unsigned int baseM = get_group_id(0) * " + isa::utils::toString(nrThreads) + ";\n"
 	"const unsigned int baseN = get_group_id(1) * " + isa::utils::toString(nrThreads) + ";\n"
 	"__local "+ typeName + " tempStorage[" + isa::utils::toString(nrThreads * nrThreads) + "];"
