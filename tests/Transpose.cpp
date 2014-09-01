@@ -23,7 +23,6 @@
 
 #include <ArgumentList.hpp>
 #include <Exceptions.hpp>
-#include <Observation.hpp>
 #include <InitializeOpenCL.hpp>
 #include <Kernel.hpp>
 #include <utils.hpp>
