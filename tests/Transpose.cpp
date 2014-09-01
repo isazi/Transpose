@@ -46,13 +46,13 @@ int main(int argc, char *argv[]) {
 	try {
     isa::utils::ArgumentList args(argc, argv);
     print = args.getSwitch("-print");
-		clPlatformID = args.getSwitchArgument("-opencl_platform");
-		clDeviceID = args.getSwitchArgument("-opencl_device");
-    padding = args.getSwitchArgument("-padding");
-    vector = args.getSwitchArgument("-vector");
-    nrThreads = args.getSwitchArgument("-threads");
-    M = args.getSwitchArgument("-M");
-    N = args.getSwitchArgument("-N");
+		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
+		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
+    padding = args.getSwitchArgument< unsigned int >("-padding");
+    vector = args.getSwitchArgument< unsigned int >("-vector");
+    nrThreads = args.getSwitchArgument< unsigned int >("-threads");
+    M = args.getSwitchArgument< unsigned int >("-M");
+    N = args.getSwitchArgument< unsigned int >("-N");
 	} catch  ( isa::Exceptions::SwitchNotFound &err ) {
     std::cerr << err.what() << std::endl;
     return 1;
