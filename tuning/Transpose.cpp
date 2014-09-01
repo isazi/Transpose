@@ -51,10 +51,10 @@ int main(int argc, char * argv[]) {
 		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
-    padding = args.getSwitchArgument("-padding");
-    vector = args.getSwitchArgument("-vector");
-    M = args.getSwitchArgument("-M");
-    N = args.getSwitchArgument("-N");
+    padding = args.getSwitchArgument< unsigned int >("-padding");
+    vector = args.getSwitchArgument< unsigned int >("-vector");
+    M = args.getSwitchArgument< unsigned int >("-M");
+    N = args.getSwitchArgument< unsigned int >("-N");
 		minThreads = args.getSwitchArgument< unsigned int >("-min_threads");
 		maxThreads = args.getSwitchArgument< unsigned int >("-max_threads");
 	} catch ( isa::Exceptions::EmptyCommandLine &err ) {
