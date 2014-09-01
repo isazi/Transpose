@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <limits>
 #include <ctime>
+#include <cmath>
 
 #include <ArgumentList.hpp>
 #include <Exceptions.hpp>
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
     kernel->setArg(1, output_d);
     
     clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, NULL);
-    PulsarSearch::transpose(input, output_c);
+    isa::OpenCL::transpose(input, output_c);
     clQueues->at(clDeviceID)[0].enqueueReadBuffer(output_d, CL_TRUE, 0, output.size() * sizeof(dataType), reinterpret_cast< void * >(output.data()));
   } catch ( cl::Error &err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
