@@ -26,13 +26,13 @@ namespace isa {
 namespace OpenCL {
 
 // Sequential transpose
-template< typename T > transpose(std::vector< T > &input, std::vector< T > &output);
+template< typename T > void transpose(std::vector< T > &input, std::vector< T > &output);
 // OpenCL transpose
 std::string * getTransposeOpenCL(const unsigned int nrThreads, const unsigned int M, const unsigned int N, const unsigned int padding, const unsigned int vector, std::string typeName);
 
 
 // Implementations
-template< typename T > transpose(const unsigned int M, const unsigned int N, const unsigned int padding, std::vector< T > &input, std::vector< T > &output) {
+template< typename T > void transpose(const unsigned int M, const unsigned int N, const unsigned int padding, std::vector< T > &input, std::vector< T > &output) {
   for ( unsigned int i = 0; i < M; i++ ) {
     for ( unsigned int j = 0; j < N; j++ ) {
       output[(j * isa::utils::pad(M, padding)) + i] = input[(i * isa::utils::pad(N, padding)) + j];
