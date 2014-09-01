@@ -1,4 +1,4 @@
-// Copyright 2013 Alessio Sclocco <a.sclocco@vu.nl>
+// Copyright 2014 Alessio Sclocco <a.sclocco@vu.nl>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,137 +19,147 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
-#include <cmath>
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::string;
-using std::vector;
-using std::exception;
-using std::ofstream;
-using std::fixed;
-using std::setprecision;
-using std::numeric_limits;
+#include <algorithm>
 
 #include <ArgumentList.hpp>
-using isa::utils::ArgumentList;
 #include <InitializeOpenCL.hpp>
-using isa::OpenCL::initializeOpenCL;
-#include <CLData.hpp>
-using isa::OpenCL::CLData;
-#include <utils.hpp>
-using isa::utils::toStringValue;
-using isa::utils::pad;
-#include <Timer.hpp>
-using isa::utils::Timer;
+#include <Kernel.hpp>
 #include <Transpose.hpp>
-using isa::OpenCL::Transpose;
+#include <utils.hpp>
+#include <Exceptions.hpp>
+#include <Timer.hpp>
+#include <Stats.hpp>
 
 typedef float dataType;
-const string typeName("float");
+string typeName("float");
 
 
 int main(int argc, char * argv[]) {
-	unsigned int lowerNrThreads = 0;
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
-	unsigned int padding = 0;
-	unsigned int vectorWidth = 32;
-	unsigned int maxThreadsPerBlock = 0;
-	unsigned int M = 0;
-	unsigned int N = 0;
-	CLData< dataType > * inputData = new CLData< dataType >("InputData", true);
-	CLData< dataType > * transposedData = new CLData<dataType >("TranposedData", true);
-
+	unsigned int minThreads = 0;
+	unsigned int maxThreads = 0;
+  unsigned int padding = 0;
+  unsigned int vector = 0;
+  unsigned int M = 0;
+  unsigned int N = 0;
 
 	try {
-		ArgumentList args(argc, argv);
+    isa::utils::ArgumentList args(argc, argv);
 
+		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
-		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
-		padding = args.getSwitchArgument< unsigned int >("-padding");
-		vectorWidth = args.getSwitchArgument< unsigned int >("-vector");
-		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
-		maxThreadsPerBlock = args.getSwitchArgument< unsigned int >("-mnt");
-		M = args.getSwitchArgument< unsigned int >("-M");
-		N = args.getSwitchArgument< unsigned int >("-N");
-	} catch ( EmptyCommandLine err ) {
-		cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -vector ... -lnt ... -mnt ... -M ... -N ..." << endl;
+    padding = args.getSwitchArgument("-padding");
+    vector = args.getSwitchArgument("-vector");
+    M = args.getSwitchArgument("-M");
+    N = args.getSwitchArgument("-N");
+		minThreads = args.getSwitchArgument< unsigned int >("-min_threads");
+		maxThreads = args.getSwitchArgument< unsigned int >("-max_threads");
+	} catch ( isa::Exceptions::EmptyCommandLine &err ) {
+		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... - vector ... -M ... -N ... -min_threads ... -max_threads ..." << std::endl;
 		return 1;
-	} catch ( exception & err ) {
-		cerr << err.what() << endl;
+	} catch ( std::exception &err ) {
+		std::cerr << err.what() << std::endl;
 		return 1;
 	}
 
+	// Initialize OpenCL
 	cl::Context * clContext = new cl::Context();
-	vector< cl::Platform > * clPlatforms = new vector< cl::Platform >();
-	vector< cl::Device > * clDevices = new vector< cl::Device >();
-	vector< vector< cl::CommandQueue > > * clQueues = new vector< vector < cl::CommandQueue > >();
+	std::vector< cl::Platform > * clPlatforms = new std::vector< cl::Platform >();
+	std::vector< cl::Device > * clDevices = new std::vector< cl::Device >();
+	std::vector< std::vector< cl::CommandQueue > > * clQueues = new std::vector< std::vector < cl::CommandQueue > >();
 
-	initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
-
-	cout << fixed << endl;
-	cout << "# M N nrThreadPerBlock GB/s err time err" << endl << endl;
+  isa::OpenCL::initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
 
 	// Allocate memory
-	inputData->allocateHostData(M * pad(N, padding));
-	inputData->blankHostData();
-	transposedData->allocateHostData(N * pad(M, padding));
-	transposedData->blankHostData();
+  std::vector< dataType > input = std::vector< dataType >(M * isa::utils::pad(N, padding));
+  cl::Buffer input_d;
+  std::vector< dataType > output = std::vector< dataType >(N * isa::utils::pad(M, padding));
+  cl::Buffer output_d;
+  try {
+    input_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, input.size() * sizeof(dataType), NULL, NULL);
+    output_d = cl::Buffer(*clContext, CL_MEM_WRITE_ONLY, output.size() * sizeof(dataType), NULL, NULL);
+  } catch ( cl::Error &err ) {
+    std::cerr << "OpenCL error allocating memory: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    return 1;
+  }
 
-	inputData->setCLContext(clContext);
-	inputData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
-	transposedData->setCLContext(clContext);
-	transposedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
-
-	try {
-		inputData->setDeviceReadOnly();
-		inputData->allocateDeviceData();
-		inputData->copyHostToDevice();
-		transposedData->setDeviceWriteOnly();
-		transposedData->allocateDeviceData();
-		transposedData->copyHostToDevice();
-	} catch ( OpenCLError err ) {
-		cerr << err.what() << endl;
+	srand(time(NULL));
+  for ( unsigned int m = 0; m < M; m++ ) {
+    for ( unsigned int n = 0; n < N; n++ ) {
+      input[(m * isa::utils::pad(N, padding)) + n] = static_cast< dataType >(rand() % 10);
+    }
 	}
+
+  // Copy data structures to device
+  try {
+    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(input_d, CL_FALSE, 0, input.size() * sizeof(dataType), reinterpret_cast< void * >(input.data()));
+  } catch ( cl::Error &err ) {
+    std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    return 1;
+  }
 
 	// Find the parameters
-	vector< unsigned int > configurations;
-	for ( unsigned int threadsPerBlock = lowerNrThreads; threadsPerBlock <= maxThreadsPerBlock; threadsPerBlock += vectorWidth ) {
-		if ( M % threadsPerBlock == 0 ) {
-			configurations.push_back(threadsPerBlock);
+	std::vector< unsigned int > threads;
+	for ( unsigned int nrThreads = minThreads; nrThreads <= maxThreads; nrThreads += minThreads ) {
+		if ( (M % nrThreads) == 0 ) {
+			threads.push_back(nrThreads);
 		}
 	}
 
-	for ( vector< unsigned int >::const_iterator configuration = configurations.begin(); configuration != configurations.end(); configuration++ ) {
-		try {
-			// Generate kernel
-			Transpose< dataType > clTranspose("clTranspose", typeName);
-			clTranspose.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
-			clTranspose.setDimensions(M, N);
-			clTranspose.setPaddingFactor(padding);
-			clTranspose.setVectorWidth(vectorWidth);
-			clTranspose.setNrThreadsPerBlock(*configuration);
-			clTranspose.generateCode();
+	std::cout << std::fixed << std::endl;
+	std::cout << "# M N nrThreads GB/s err time err" << std::endl << std::endl;
 
-			clTranspose(inputData, transposedData);
-			(clTranspose.getTimer()).reset();
-			clTranspose.resetStats();
+  for ( std::vector< unsigned int >::iterator nrThreads = threads.begin(); nrThreads != threads.end(); ++nrThreads ) {
+    // Generate kernel
+    cl::Kernel * kernel;
+    std::string * code = isa::OpenCL::getTransposeOpenCL(*nrThreads, M, N, padding, vector, typeName);
 
-			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
-				clTranspose(inputData, transposedData);
-			}
+    try {
+      kernel = isa::OpenCL::compile("transpose", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
+    } catch ( isa::Exceptions::OpenCLError &err ) {
+      std::cerr << err.what() << std::endl;
+      return 1;
+    }
+    cl::NDRange global(M, std::ceil(static_cast< double >(N) / *nrThreads));
+    cl::NDRange local(*nrThreads, 1);
 
-			cout << M << " " << N << " " << *configuration << " " << setprecision(3) << clTranspose.getGBs() << " " << clTranspose.getGBsErr() << " " << setprecision(6) << clTranspose.getTimer().getAverageTime() << " " << clTranspose.getTimer().getStdDev() << endl;
-		} catch ( OpenCLError err ) {
-			cerr << err.what() << endl;
-			continue;
-		}
-	}
+    kernel->setArg(0, input_d);
+    kernel->setArg(1, output_d);
 
-	cout << endl;
+    // Warm-up run
+    try {
+      clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, NULL);
+    } catch ( cl::Error &err ) {
+      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+      continue;
+    }
+    // Tuning runs
+    double gbs = isa::utils::giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(dataType));
+    isa::utils::Timer timer("Kernel Timer");
+    isa::utils::Stats< double > stats;
+    cl::Event event;
+
+    try {
+      for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
+        timer.start();
+        clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, &event);
+        event.wait();
+        timer.stop();
+        stats.addElement(gbs / timer.getLastRunTime());
+      }
+    } catch ( cl::Error &err ) {
+      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+      continue;
+    }
+
+    std::cout << M << " " << N << " " << *nrThreads << " " << std::setprecision(3) << stats.getAverage() << " " << stats.getStdDev() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStdDev() << std::endl;
+  }
+
+	std::cout << std::endl;
 
 	return 0;
 }
+
