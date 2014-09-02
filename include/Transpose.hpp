@@ -131,7 +131,7 @@ void transposeAVX(const unsigned int M, const unsigned int N, const float * inpu
 
       // Store output
       for ( unsigned int i = 0; i < 8; i++ ) {
-        _mm256_store_ps(reinterpret_cast< void * >(&(input[((n + i) * isa::utils::pad(M, 8)) + m])), buffer[i]); 
+        _mm256_store_ps(&(output[((n + i) * isa::utils::pad(M, 8)) + m]), buffer[i]); 
       }
     }
   }
