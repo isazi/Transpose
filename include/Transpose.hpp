@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <string>
+#include <x86intrin.h>
 
 #include <utils.hpp>
 
