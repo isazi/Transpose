@@ -34,7 +34,6 @@ int main(int argc, char *argv[]) {
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
-    print = args.getSwitch("-print");
     M = args.getSwitchArgument< unsigned int >("-M");
     N = args.getSwitchArgument< unsigned int >("-N");
 	} catch  ( isa::Exceptions::SwitchNotFound &err ) {
@@ -46,24 +45,24 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Allocate memory
-  std::vector< float > input = std::vector< float >(M * isa::utils::pad(N, padding));
-  std::vector< float > output = std::vector< float >(N * isa::utils::pad(M, padding));
-  std::vector< float > output_c = std::vector< float >(N * isa::utils::pad(M, padding));
+  std::vector< float > input = std::vector< float >(M * isa::utils::pad(N, 8));
+  std::vector< float > output = std::vector< float >(N * isa::utils::pad(M, 8));
+  std::vector< float > output_c = std::vector< float >(N * isa::utils::pad(M, 8));
 
 	srand(time(NULL));
   for ( unsigned int m = 0; m < M; m++ ) {
     for ( unsigned int n = 0; n < N; n++ ) {
-      input[(m * isa::utils::pad(N, padding)) + n] = static_cast< float >(rand() % 10);
+      input[(m * isa::utils::pad(N, 8)) + n] = static_cast< float >(rand() % 10);
     }
 	}
 
   // Run AVX kernel and CPU control
   isa::OpenCL::transposeAVX(M, N, input.data(), output.data());
-  isa::OpenCL::transpose(M, N, padding, input, output_c);
+  isa::OpenCL::transpose(M, N, 8, input, output_c);
 
   for ( unsigned int n = 0; n < N; n++ ) {
     for ( unsigned int m = 0; m < M; m++ ) {
-      if ( ! isa::utils::same(output_c[(n * isa::utils::pad(M, padding)) + m], output[(n * isa::utils::pad(M, padding)) + m]) ) {
+      if ( ! isa::utils::same(output_c[(n * isa::utils::pad(M, 8)) + m], output[(n * isa::utils::pad(M, 8)) + m]) ) {
         wrongItems++;
       }
     }
