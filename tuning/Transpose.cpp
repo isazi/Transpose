@@ -26,7 +26,6 @@
 #include <Kernel.hpp>
 #include <Transpose.hpp>
 #include <utils.hpp>
-#include <Exceptions.hpp>
 #include <Timer.hpp>
 #include <Stats.hpp>
 
@@ -57,7 +56,7 @@ int main(int argc, char * argv[]) {
     N = args.getSwitchArgument< unsigned int >("-N");
 		minThreads = args.getSwitchArgument< unsigned int >("-min_threads");
 		maxThreads = args.getSwitchArgument< unsigned int >("-max_threads");
-	} catch ( isa::Exceptions::EmptyCommandLine &err ) {
+	} catch ( isa::utils::EmptyCommandLine &err ) {
 		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... - vector ... -M ... -N ... -min_threads ... -max_threads ..." << std::endl;
 		return 1;
 	} catch ( std::exception &err ) {
@@ -119,7 +118,7 @@ int main(int argc, char * argv[]) {
 
     try {
       kernel = isa::OpenCL::compile("transpose", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
-    } catch ( isa::Exceptions::OpenCLError &err ) {
+    } catch ( isa::OpenCL::OpenCLError &err ) {
       std::cerr << err.what() << std::endl;
       return 1;
     }

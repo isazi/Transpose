@@ -23,7 +23,6 @@
 #include <cmath>
 
 #include <ArgumentList.hpp>
-#include <Exceptions.hpp>
 #include <InitializeOpenCL.hpp>
 #include <Kernel.hpp>
 #include <utils.hpp>
@@ -54,7 +53,7 @@ int main(int argc, char *argv[]) {
     nrThreads = args.getSwitchArgument< unsigned int >("-threads");
     M = args.getSwitchArgument< unsigned int >("-M");
     N = args.getSwitchArgument< unsigned int >("-N");
-	} catch  ( isa::Exceptions::SwitchNotFound &err ) {
+	} catch  ( isa::utils::SwitchNotFound &err ) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
 
   try {
     kernel = isa::OpenCL::compile("transpose", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
-  } catch ( isa::Exceptions::OpenCLError &err ) {
+  } catch ( isa::OpenCL::OpenCLError &err ) {
     std::cerr << err.what() << std::endl;
     return 1;
   }
