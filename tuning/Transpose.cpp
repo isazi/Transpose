@@ -78,14 +78,14 @@ int main(int argc, char * argv[]) {
   std::vector< dataType > output = std::vector< dataType >(N * isa::utils::pad(M, padding));
   cl::Buffer output_d;
   try {
-    input_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, input.size() * sizeof(dataType), NULL, NULL);
-    output_d = cl::Buffer(*clContext, CL_MEM_WRITE_ONLY, output.size() * sizeof(dataType), NULL, NULL);
+    input_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, input.size() * sizeof(dataType), 0, 0);
+    output_d = cl::Buffer(*clContext, CL_MEM_WRITE_ONLY, output.size() * sizeof(dataType), 0, 0);
   } catch ( cl::Error &err ) {
-    std::cerr << "OpenCL error allocating memory: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    std::cerr << "OpenCL error allocating memory: " << isa::utils::toString(err.err()) << "." << std::endl;
     return 1;
   }
 
-	srand(time(NULL));
+	srand(time(0));
   for ( unsigned int m = 0; m < M; m++ ) {
     for ( unsigned int n = 0; n < N; n++ ) {
       input[(m * isa::utils::pad(N, padding)) + n] = static_cast< dataType >(rand() % 10);
@@ -96,7 +96,7 @@ int main(int argc, char * argv[]) {
   try {
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(input_d, CL_FALSE, 0, input.size() * sizeof(dataType), reinterpret_cast< void * >(input.data()));
   } catch ( cl::Error &err ) {
-    std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString(err.err()) << "." << std::endl;
     return 1;
   }
 
@@ -113,6 +113,10 @@ int main(int argc, char * argv[]) {
 
   for ( std::vector< unsigned int >::iterator nrThreads = threads.begin(); nrThreads != threads.end(); ++nrThreads ) {
     // Generate kernel
+    double gbs = isa::utils::giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(dataType));
+    isa::utils::Timer timer("Kernel Timer");
+    isa::utils::Stats< double > stats;
+    cl::Event event;
     cl::Kernel * kernel;
     std::string * code = isa::OpenCL::getTransposeOpenCL(*nrThreads, M, N, padding, vector, typeName);
 
@@ -130,27 +134,23 @@ int main(int argc, char * argv[]) {
 
     // Warm-up run
     try {
-      clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, NULL);
+      clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
+      event.wait();
     } catch ( cl::Error &err ) {
-      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString(err.err()) << "." << std::endl;
       continue;
     }
     // Tuning runs
-    double gbs = isa::utils::giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(dataType));
-    isa::utils::Timer timer("Kernel Timer");
-    isa::utils::Stats< double > stats;
-    cl::Event event;
-
     try {
       for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
         timer.start();
-        clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, &event);
+        clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
         event.wait();
         timer.stop();
         stats.addElement(gbs / timer.getLastRunTime());
       }
     } catch ( cl::Error &err ) {
-      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+      std::cerr << "OpenCL error kernel execution: " << isa::utils::toString(err.err()) << "." << std::endl;
       continue;
     }
 
