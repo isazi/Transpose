@@ -30,7 +30,7 @@
 #include <Stats.hpp>
 
 typedef float dataType;
-string typeName("float");
+std::string typeName("float");
 
 
 int main(int argc, char * argv[]) {
@@ -114,7 +114,7 @@ int main(int argc, char * argv[]) {
   for ( std::vector< unsigned int >::iterator nrThreads = threads.begin(); nrThreads != threads.end(); ++nrThreads ) {
     // Generate kernel
     double gbs = isa::utils::giga(static_cast< long long unsigned int >(M) * N * 2 * sizeof(dataType));
-    isa::utils::Timer timer("Kernel Timer");
+    isa::utils::Timer timer;
     isa::utils::Stats< double > stats;
     cl::Event event;
     cl::Kernel * kernel;
