@@ -33,7 +33,8 @@ std::string typeName("float");
 
 
 int main(int argc, char *argv[]) {
-  bool print = false;
+  bool printCode = false;
+  bool printData = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
   unsigned int nrThreads = 0;
@@ -45,7 +46,8 @@ int main(int argc, char *argv[]) {
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
-    print = args.getSwitch("-print");
+    printCode = args.getSwitch("-print_code");
+    printData = args.getSwitch("-print_data");
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
     padding = args.getSwitchArgument< unsigned int >("-padding");
@@ -57,7 +59,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -opencl_device ... -padding ... -vector ... -threads ... -M ... -N ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-print_code] [-print_data] -opencl_platform ... -opencl_device ... -padding ... -vector ... -threads ... -M ... -N ..." << std::endl;
 		return 1;
 	}
 
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
   // Generate kernel
   cl::Kernel * kernel;
   std::string * code = isa::OpenCL::getTransposeOpenCL(nrThreads, M, N, padding, vector, typeName);
-  if ( print ) {
+  if ( printCode ) {
     std::cout << *code << std::endl;
   }
 
@@ -128,12 +130,30 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if ( printData ) {
+    for ( unsigned int m = 0; m < M; m++ ) {
+      for ( unsigned int n = 0; n < N; n++ ) {
+        std::cout << input[(m * isa::utils::pad(N, padding)) + n] << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
   for ( unsigned int n = 0; n < N; n++ ) {
     for ( unsigned int m = 0; m < M; m++ ) {
       if ( ! isa::utils::same(output_c[(n * isa::utils::pad(M, padding)) + m], output[(n * isa::utils::pad(M, padding)) + m]) ) {
         wrongItems++;
       }
+      if ( printData ) {
+        std::cout << output[(n * isa::utils::pad(M, padding)) + m] << " ";
+      }
     }
+    if ( printData ) {
+      std::cout << std::endl;
+    }
+  }
+  if ( printData ) {
+    std::cout << std::endl;
   }
 
   if ( wrongItems > 0 ) {
