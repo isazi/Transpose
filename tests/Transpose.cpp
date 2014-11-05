@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   // Run OpenCL kernel and CPU control
   try {
-    cl::NDRange global(M, std::ceil(static_cast< double >(N) / nrThreads));
+    cl::NDRange global(isa::utils::pad(M, padding), std::ceil(static_cast< double >(isa::utils::pad(N, padding)) / nrThreads));
     cl::NDRange local(nrThreads, 1);
 
     kernel->setArg(0, input_d);
