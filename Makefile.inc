@@ -7,6 +7,7 @@ ISA_UTILS_INCLUDE	:= $(HOME)/src/utils/include
 ISA_OPENCL_INCLUDE	:= $(HOME)/src/OpenCL/include
 
 INCLUDES := -I"$(PROJ_BASE)/include" -I"$(OPENCL_INCLUDE)" -I"$(ISA_UTILS_INCLUDE)" -I"$(ISA_OPENCL_INCLUDE)"
+CPU_INCLUDES := -I"$(PROJ_BASE)/include" -I"$(ISA_UTILS_INCLUDE)"
 LIBS := -L"$(OPENCL_LIB)"
 
 ifneq ($(debug), 1)
