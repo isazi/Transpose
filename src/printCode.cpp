@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception & err ) {
-    std::cerr << "Usage: " << argv[0] << "-type ... -padding ... -vector ... -threads ... -M ... -N ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " -type ... -padding ... -vector ... -threads ... -M ... -N ..." << std::endl;
 		return 1;
 	}
 
