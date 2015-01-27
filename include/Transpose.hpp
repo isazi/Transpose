@@ -38,7 +38,7 @@ public:
 
 private:
   unsigned int nrItemsPerBlock;
-}
+};
 
 // Sequential transpose
 template< typename T > void transpose(const unsigned int M, const unsigned int N, const unsigned int padding, std::vector< T > & input, std::vector< T > & output);
