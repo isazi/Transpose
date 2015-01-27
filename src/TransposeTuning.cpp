@@ -181,7 +181,7 @@ void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue,
   try {
     *input_d = cl::Buffer(clContext, CL_MEM_READ_ONLY, input->size() * sizeof(dataType), 0, 0);
     *output_d = cl::Buffer(clContext, CL_MEM_WRITE_ONLY, output_size * sizeof(dataType), 0, 0);
-    clQueue->.enqueueWriteBuffer(*input_d, CL_FALSE, 0, input->size() * sizeof(dataType), reinterpret_cast< void * >(input->data()));
+    clQueue->enqueueWriteBuffer(*input_d, CL_FALSE, 0, input->size() * sizeof(dataType), reinterpret_cast< void * >(input->data()));
     clQueue->finish();
   } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString(err.err()) << "." << std::endl;
