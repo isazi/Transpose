@@ -25,20 +25,20 @@ DEPS := $(UTILS)/bin/ArgumentList.o $(UTILS)/bin/Timer.o $(UTILS)/bin/utils.o bi
 CL_DEPS := $(DEPS) $(OPENCL)/bin/Exceptions.o $(OPENCL)/bin/InitializeOpenCL.o $(OPENCL)/bin/Kernel.o 
 
 
-all: Transpose.o TransposeTest TransposeTuning printCode
+all: bin/Transpose.o bin/TransposeTest bin/TransposeTuning bin/printCode
 
-Transpose.o: $(UTILS)/bin/utils.o include/Transpose.hpp src/Transpose.cpp
+bin/Transpose.o: $(UTILS)/bin/utils.o include/Transpose.hpp src/Transpose.cpp
 	$(CC) -o bin/Transpose.o -c src/Transpose.cpp $(CL_INCLUDES) $(CFLAGS)
 
-TransposeTest: $(CL_DEPS) src/TransposeTest.cpp
+bin/TransposeTest: $(CL_DEPS) src/TransposeTest.cpp
 	$(CC) -o bin/TransposeTest src/TransposeTest.cpp $(CL_DEPS) $(CL_INCLUDES) $(CL_LIBS) $(CL_LDFLAGS) $(CFLAGS)
 
-TransposeTuning: $(CL_DEPS) src/TransposeTuning.cpp
+bin/TransposeTuning: $(CL_DEPS) src/TransposeTuning.cpp
 	$(CC) -o bin/TransposeTuning src/TransposeTuning.cpp $(CL_DEPS) $(CL_INCLUDES) $(CL_LIBS) $(CL_LDFLAGS) $(CFLAGS)
 
-printCode: $(DEPS) src/printCode.cpp
+bin/printCode: $(DEPS) src/printCode.cpp
 	$(CC) -o bin/printCode src/printCode.cpp $(DEPS) $(INCLUDES) $(LDFLAGS) $(CFLAGS)
 
 clean:
-	rm bin/*
+	-@rm bin/*
 
