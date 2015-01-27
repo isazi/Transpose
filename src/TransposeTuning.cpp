@@ -119,7 +119,7 @@ int main(int argc, char * argv[]) {
       clQueues = new std::vector< std::vector< cl::CommandQueue > >();
       isa::OpenCL::initializeOpenCL(clPlatformID, 1, clPlatforms, &clContext, clDevices, clQueues);
       try {
-        initializeDeviceMemory(clContext, &(clQueues->at(clDeviceID)[0]), &input, &input_d, output_d, N * isa::utils::pad(M, padding));
+        initializeDeviceMemory(clContext, &(clQueues->at(clDeviceID)[0]), &input, &input_d, &output_d, N * isa::utils::pad(M, padding));
       } catch ( cl::Error & err ) {
         return -1;
       }
