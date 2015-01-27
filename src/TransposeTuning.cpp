@@ -61,7 +61,7 @@ int main(int argc, char * argv[]) {
     N = args.getSwitchArgument< unsigned int >("-N");
 		minThreads = args.getSwitchArgument< unsigned int >("-min_threads");
 		maxThreads = args.getSwitchArgument< unsigned int >("-max_threads");
-    threadInc = args.getSwitchArgument< unsigned int >("-thread_inc")
+    threadInc = args.getSwitchArgument< unsigned int >("-thread_inc");
 	} catch ( isa::utils::EmptyCommandLine & err ) {
 		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... - vector ... -M ... -N ... -min_threads ... -max_threads ... -thread_inc ..." << std::endl;
 		return 1;
