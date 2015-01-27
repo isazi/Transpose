@@ -28,19 +28,19 @@
 
 
 int main(int argc, char *argv[]) {
-  unsigned int nrThreads = 0;
   unsigned int padding = 0;
   unsigned int vector = 0;
   unsigned int M = 0;
   unsigned int N = 0;
   std::string typeName;
+  isa::OpenCL::transposeConf conf;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
     typeName = args.getSwitchArgument< std::string >("-type");
     padding = args.getSwitchArgument< unsigned int >("-padding");
     vector = args.getSwitchArgument< unsigned int >("-vector");
-    nrThreads = args.getSwitchArgument< unsigned int >("-threads");
+    conf.setNrItemsPerBlock(args.getSwitchArgument< unsigned int >("-threads"));
     M = args.getSwitchArgument< unsigned int >("-M");
     N = args.getSwitchArgument< unsigned int >("-N");
 	} catch  ( isa::utils::SwitchNotFound & err ) {
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	}
 
   // Generate kernel
-  std::string * code = isa::OpenCL::getTransposeOpenCL(nrThreads, M, N, padding, vector, typeName);
+  std::string * code = isa::OpenCL::getTransposeOpenCL(conf, M, N, padding, vector, typeName);
   std::cout << *code << std::endl;
 
 	return 0;
