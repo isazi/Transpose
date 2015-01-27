@@ -37,12 +37,12 @@ int main(int argc, char *argv[]) {
   bool printData = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
-  unsigned int nrThreads = 0;
   unsigned int padding = 0;
   unsigned int vector = 0;
   unsigned int M = 0;
   unsigned int N = 0;
 	long long unsigned int wrongItems = 0;
+  isa::OpenCL::transposeConf conf;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
@@ -52,13 +52,13 @@ int main(int argc, char *argv[]) {
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
     padding = args.getSwitchArgument< unsigned int >("-padding");
     vector = args.getSwitchArgument< unsigned int >("-vector");
-    nrThreads = args.getSwitchArgument< unsigned int >("-threads");
+    conf.setNrItemsPerBlock(args.getSwitchArgument< unsigned int >("-threads"));
     M = args.getSwitchArgument< unsigned int >("-M");
     N = args.getSwitchArgument< unsigned int >("-N");
-	} catch  ( isa::utils::SwitchNotFound &err ) {
+	} catch  ( isa::utils::SwitchNotFound & err ) {
     std::cerr << err.what() << std::endl;
     return 1;
-  }catch ( std::exception &err ) {
+  }catch ( std::exception & err ) {
     std::cerr << "Usage: " << argv[0] << " [-print_code] [-print_data] -opencl_platform ... -opencl_device ... -padding ... -vector ... -threads ... -M ... -N ..." << std::endl;
 		return 1;
 	}
@@ -78,14 +78,14 @@ int main(int argc, char *argv[]) {
   cl::Buffer output_d;
   std::vector< dataType > output_c = std::vector< dataType >(N * isa::utils::pad(M, padding));
   try {
-    input_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, input.size() * sizeof(dataType), NULL, NULL);
-    output_d = cl::Buffer(*clContext, CL_MEM_WRITE_ONLY, output.size() * sizeof(dataType), NULL, NULL);
-  } catch ( cl::Error &err ) {
+    input_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, input.size() * sizeof(dataType), 0, 0);
+    output_d = cl::Buffer(*clContext, CL_MEM_WRITE_ONLY, output.size() * sizeof(dataType), 0, 0);
+  } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error allocating memory: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
   }
 
-	srand(time(NULL));
+	srand(time(0));
   for ( unsigned int m = 0; m < M; m++ ) {
     for ( unsigned int n = 0; n < N; n++ ) {
       input[(m * isa::utils::pad(N, padding)) + n] = static_cast< dataType >(rand() % 10);
@@ -95,42 +95,37 @@ int main(int argc, char *argv[]) {
   // Copy data structures to device
   try {
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(input_d, CL_FALSE, 0, input.size() * sizeof(dataType), reinterpret_cast< void * >(input.data()));
-  } catch ( cl::Error &err ) {
+  } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
   }
 
   // Generate kernel
   cl::Kernel * kernel;
-  std::string * code = isa::OpenCL::getTransposeOpenCL(nrThreads, M, N, padding, vector, typeName);
+  std::string * code = isa::OpenCL::getTransposeOpenCL(conf, M, N, padding, vector, typeName);
   if ( printCode ) {
     std::cout << *code << std::endl;
   }
 
   try {
     kernel = isa::OpenCL::compile("transpose", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
-  } catch ( isa::OpenCL::OpenCLError &err ) {
+  } catch ( isa::OpenCL::OpenCLError & err ) {
     std::cerr << err.what() << std::endl;
     return 1;
   }
 
   // Run OpenCL kernel and CPU control
   try {
-    cl::NDRange global(isa::utils::pad(M, padding), std::ceil(static_cast< double >(isa::utils::pad(N, padding)) / nrThreads));
-    cl::NDRange local(nrThreads, 1);
+    cl::NDRange global(isa::utils::pad(M, padding), std::ceil(static_cast< double >(isa::utils::pad(N, padding)) / conf.getNrItemsPerBlock()));
+    cl::NDRange local(conf.getNrItemsPerBlock(), 1);
 
     kernel->setArg(0, input_d);
     kernel->setArg(1, output_d);
     
-    if ( printCode ) {
-      std::cout << "NDRange global: " << isa::utils::pad(M, padding) << " " << static_cast< unsigned int >(std::ceil(static_cast< double >(isa::utils::pad(N, padding)) / nrThreads)) << std::endl;
-      std::cout << "NDRange local: " << nrThreads << " " << 1 << std::endl;
-      std::cout << std::endl;
-    }
-    clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, NULL);
+    clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, 0);
     isa::OpenCL::transpose(M, N, padding, input, output_c);
     clQueues->at(clDeviceID)[0].enqueueReadBuffer(output_d, CL_TRUE, 0, output.size() * sizeof(dataType), reinterpret_cast< void * >(output.data()));
-  } catch ( cl::Error &err ) {
+  } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
   }
