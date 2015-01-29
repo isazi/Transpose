@@ -142,6 +142,7 @@ int main(int argc, char * argv[]) {
 
     try {
       // Warm-up run
+      clQueues->at(clDeviceID)[0].finish();
       clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
       event.wait();
       // Tuning runs
