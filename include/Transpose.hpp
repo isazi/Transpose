@@ -40,10 +40,14 @@ private:
   unsigned int nrItemsPerBlock;
 };
 
+typedef std::map< std::string, std::map< unsigned int, isa::OpenCL::transposeConf > > tunedTransposeConf;
+
 // Sequential transpose
 template< typename T > void transpose(const unsigned int M, const unsigned int N, const unsigned int padding, std::vector< T > & input, std::vector< T > & output);
 // OpenCL transpose
 std::string * getTransposeOpenCL(const transposeConf & conf, const unsigned int M, const unsigned int N, const unsigned int padding, const unsigned int vector, std::string typeName);
+// Read configuration files
+void readTunedTransposeConf(tunedTransposeConf & tunedTranspose, const std::string & transposeFilename);
 
 
 // Implementations

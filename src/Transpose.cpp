@@ -72,6 +72,40 @@ std::string * getTransposeOpenCL(const transposeConf & conf, const unsigned int 
   return code;
 }
 
+void readTunedTransposeConf(tunedTransposeConf & tunedTranspose, const std::string & transposeFilename) {
+	std::string temp;
+	std::ifstream transposeFile(transposeFilename);
+
+	while ( ! transposeFile.eof() ) {
+		unsigned int splitPoint = 0;
+
+		std::getline(transposeFile, temp);
+		if ( ! std::isalpha(temp[0]) ) {
+			continue;
+		}
+		std::string deviceName;
+		unsigned int nrDMs = 0;
+    isa::OpenCL::transposeConf parameters;
+
+		splitPoint = temp.find(" ");
+		deviceName = temp.substr(0, splitPoint);
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		nrDMs = isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint));
+		temp = temp.substr(splitPoint + 1);
+		parameters.setNrItemsPerBlock(isa::utils::castToType< std::string, unsigned int >(temp));
+
+		if ( tunedTranspose.count(deviceName) == 0 ) {
+      std::map< unsigned int, isa::OpenCL::transposeConf > container;
+
+			container.insert(std::make_pair(nrDMs, parameters));
+			tunedTranspose.insert(std::make_pair(deviceName, container));
+		} else {
+			tunedTranspose[deviceName].insert(std::make_pair(nrDMs, parameters));
+		}
+	}
+}
+
 } // OpenCL
 } // isa
 
